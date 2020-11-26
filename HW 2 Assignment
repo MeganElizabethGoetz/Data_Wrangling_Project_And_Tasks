@@ -1,0 +1,138 @@
+my_connection <- odbcConnect(server_username,database_username,database_password)
+
+phone_call_encounter <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Phonecall_Encounter")
+View(phone_call_encounter)
+
+library(dplyr)
+library(dbplyr)
+library(sqldf)
+
+#1).
+
+phone_call_encounter$EnrollmentGroup <- case_when(
+phone_call_encounter$EncounterCode==125060000 ~"Clinical Alert",
+phone_call_encounter$EncounterCode==125060001 ~ "Health Coaching",
+phone_call_encounter$EncounterCode==125060002 ~ "Technical Question",
+phone_call_encounter$EncounterCode==125060003 ~ "Administrative",
+phone_call_encounter$EncounterCode==125060004 ~ "Other",
+phone_call_encounter$EncounterCode==125060005 ~ "Lack of engagement"
+)
+
+View(EnrollmentGroup)
+View(phone_call_encounter)
+
+View(phone_call_encounter[sample(nrow(phone_call_encounter), 10), ]) #prints 10 random rows
+
+#2.)
+#To see how many counts there are for each enrollment group type.
+sum(phone_call_encounter$EnrollmentGroup=='Clinical Alert')
+sum(phone_call_encounter$EnrollmentGroup=='Health Coaching')
+sum(phone_call_encounter$EnrollmentGroup=='Technical Question')
+sum(phone_call_encounter$EnrollmentGroup=='Administrative')
+sum(phone_call_encounter$EnrollmentGroup=='Other')
+sum(phone_call_encounter$EnrollmentGroup=='Lack of engagement')
+
+# And the sum of all of these is 8414, which is what we wanted! Since there are
+#8414 rows of data (thus 8414 phone call records).
+
+#3.)
+call_duration <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Callduration")
+View(call_duration)
+#View(call_duration[1]) to make sure/verify R uses 1 as the initial index and not 0
+
+names(call_duration)[1] <- "CustomerId"
+phone_call_info <- merge(phone_call_encounter,call_duration,by="CustomerId")
+View(phone_call_info)
+
+View(phone_call_info[sample(nrow(phone_call_info), 10), ]) #prints 10 random rows to show changes
+
+#4.)
+#Part 1
+
+phone_call_info$CallType <- case_when(
+phone_call_info$CallType==1 ~"Inbound",
+phone_call_info$CallType==2 ~"Outbound")
+
+View(phone_call_info)
+
+phone_call_info$CallOutcome <- case_when(
+phone_call_info$CallOutcome==1 ~ "No response",
+phone_call_info$CallOutcome==2 ~ "Left voice mail",
+phone_call_info$CallOutcome==3 ~ "Successful")
+
+View(phone_call_info)
+
+View(phone_call_info[sample(nrow(phone_call_info), 10), ])
+
+#Part 2
+
+sum(phone_call_info$CallOutcome=="No response") 
+sum(phone_call_info$CallOutcome=="Left voice mail")
+sum(phone_call_info$CallOutcome=="Successful")
+sum(phone_call_info$CallType=="Inbound")
+sum(phone_call_info$CallType=="Outbound")
+
+#The categories for each variable add up to counts of 10,704 - which is good, since that is the total number of rows in our merged data set, phone_call_info.
+
+View(phone_call_info)
+library(dplyr)
+require(data.table)
+setDT(phone_call_info)
+enrollment_group_choices <- list("No response", "Left voice mail","Successful")
+
+#4). Part 3
+#library(dplyr)
+aggregate.data.frame(phone_call_info$CallDuration,list(phone_call_info$EnrollmentGroup),sum)
+#Here are the call duration totals (likely in minutes), by Enrollment Group type.
+
+$5.)
+# Extracting more data tables from the data base
+demographics <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Demographics")
+View(demographics)
+
+conditions <- sqlQuery(my_connection, "select * from[qbs181].[dbo].Conditions")
+View(conditions)
+
+text_messages <- sqlQuery(my_connection, "select * from[qbs181].[dbo].Text")
+View(text_messages)
+
+names(conditions)[1] <- "contactid"
+names(text_messages)[1] <- "contactid"
+#Merged data table
+
+text_frequency1 <- merge(conditions,text_messages,by="contactid")
+View(text_frequency1)
+
+#final merged data table of all 3 data tables: conditions, demographics, and texts
+
+text_frequency2 <- merge(text_frequency1,demographics,by="contactid")
+View(text_frequency2)
+
+### Need to Find the number of texts per week by type of sender ###
+#install.packages("aweek")
+
+library("aweek")
+week_number <- date2week(text_frequency2$TextSentDate, numeric=TRUE)
+#unique(week_number) --checked to make sure the values are just digits
+
+#str(week_number)
+library(dplyr)
+result <- text_frequency2 %>%
+group_by(text_frequency2$SenderName,week_number)%>%
+summarise(Number_of_Texts = n())
+
+#Here are the number of texts per week, by sender type :)
+#View(result)
+
+View(result[sample(nrow(result), 10), ])
+
+#6.)
+
+View(text_frequency2) # to see the name of the variable needed for conditions info
+
+result1 <- text_frequency2 %>%
+group_by(text_frequency2$tri_name,week_number)%>%
+summarise(Number_of_Texts = n())
+
+#View(result1)
+View(result1[sample(nrow(result1), 10), ])
