@@ -1,0 +1,50 @@
+#1).
+
+```{r}
+library("RODBC")
+library("dplyr")
+```
+
+my_connection <-odbcConnect("dartmouthqbs181goetz","mgoetz","mgoetz@qbs181")
+flowsheets <- sqlQuery(my_connection,"select * from [qbs181].[dbo].Flowsheets")
+View(flowsheets)
+
+View(unique(flowsheets$DISP_NAME))
+
+flowsheets$DISP_NAME <- gsub("cc/kg","CC-Kg",flowsheets$DISP_NAME)
+View(flowsheets)
+
+#2).
+
+flowsheets$PAT_ENC_CSN_ID <- gsub("[0-9a-zA-Z]","",flowsheets$PAT_ENC_CSN_ID)
+flowsheets$NEW_APPT_DATE <- gsub("[0-9a-zA-Z]","",flowsheets$NEW_APPT_DATE)
+flowsheets$MEAS_VALUE <- gsub("[0-9a-zA-Z]","",flowsheets$MEAS_VALUE)
+flowsheets$DISP_NAME <- gsub("[0-9a-zA-Z]"," ",flowsheets$DISP_NAME)
+
+unique(flowsheets$F5) #shows that each of these variables do havevalues that are not NA
+unique(flowsheets$F6)
+unique(flowsheets$F7)
+unique(flowsheets$F8)
+unique(flowsheets$F9)
+unique(flowsheets$F10)
+unique(flowsheets$F11)
+unique(flowsheets$F12)
+unique(flowsheets$F13)
+unique(flowsheets$F14)
+unique(flowsheets$F15)
+
+flowsheets$F5 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F5)
+flowsheets$F6 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F6)
+flowsheets$F7 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F7)
+flowsheets$F8 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F8)
+flowsheets$F9 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F9)
+flowsheets$F10 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F10)
+flowsheets$F11 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F11)
+flowsheets$F12 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F12)
+flowsheets$F13 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F13)
+flowsheets$F14 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F14)
+flowsheets$F15 <- gsub("[0-9a-zA-Z]"," ",flowsheets$F15)
+View(flowsheets[sample(nrow(flowsheets), 10), ]) 
+
+#prints of 10 random rows in attempt to show the non-NA values for the F variables so that we can see the whole data table has had alphanumeric values replaced
+#with spaces:
