@@ -1,0 +1,108 @@
+--1. Code:
+
+select * into mgoetz.DemographicsHW1 from dbo.Demographics --copied the table
+
+EXEC sp_rename 'mgoetz.DemographicsHW1.tri_age' , 'Age', 'COLUMN'
+select top 10 * from mgoetz.DemographicsHW1
+
+--EXEC sp_rename 'mgoetz.DemographicsHW1.gendercode', 'Gender', 'COLUMN'
+#have to drop gender first before renaming gendercode to gender, so I came back to this one.
+
+EXEC sp_rename 'mgoetz.DemographicsHW1.contactid', 'ID', 'COLUMN'
+EXEC sp_rename 'mgoetz.DemographicsHW1.address1_stateorprovince', 'State', 'COLUMN'
+EXEC sp_rename 'mgoetz.DemographicsHW1.tri_imaginecareenrollmentemailsentdate','EmailSentDate', 'COLUMN'
+EXEC sp_rename 'mgoetz.DemographicsHW1.tri_enrollmentcompletedate', 'Completedate','COLUMN'
+
+-- select top 10 * from mgoetz.DemographicsHW1 to make sure it worked
+
+ALTER TABLE mgoetz.DemographicsHW1 --dropping the already-existing gender column
+DROP COLUMN gender
+EXEC sp_rename 'mgoetz.DemographicsHW1.gendercode', 'Gender', 'COLUMN'
+
+--select top 10* from mgoetz.DemographicsHW1 to make sure it worked
+
+ALTER TABLE mgoetz.DemographicsHW1
+ADD EnrollmentDuration as CASE
+ when COALESCE (EmailSentDate, NULL) = NULL THEN 'Unknown'
+ when COALESCE(CompleteDate,Null) = NULL THEN 'Unknown'
+ else
+cast(DATEDIFF(day,try_convert(date,EmailSentDate,131),try_convert(date,Completedate,131)) as nvarchar)
+ END
+
+select * from mgoetz.DemographicsHW1 --checked to see if it worked
+
+select EnrollmentDuration from mgoetz.DemographicsHW1
+group by EnrollmentDuration --checked to make sure it didn’t all turn to NULL
+
+--Here are the 10 random rows with the changes from 1:
+
+SELECT TOP 10 ID,Age,Gender,State,EmailSentDate,Completedate,EnrollmentDuration FROM mgoetz.DemographicsHW1
+ORDER BY NEWID()
+
+--Note: I changed the column “GenderCode” to “Gender” (as you can see, per my code), but #3 wanted us to create a new column
+--called “Gender”, and we can’t have 2 columns called Gender. So I later renamed GenderCode, so that GenderCode and Gender (category) could coexist.
+--You will see this in my code for 3.
+
+--2. Code:
+
+ALTER TABLE mgoetz.DemographicsHW1
+ADD EnrollmentStatus as CASE
+ when COALESCE (tri_imaginecareenrollmentstatus, 100000001) =
+100000001 THEN 'NONE'
+ when COALESCE (tri_imaginecareenrollmentstatus, NULL) = NULL THEN
+'NONE'
+ when tri_imaginecareenrollmentstatus=167410011 then 'Complete'
+ when tri_imaginecareenrollmentstatus=167410001 then 'Email sent'
+ when tri_imaginecareenrollmentstatus=167410004 then 'Non responder'
+ when tri_imaginecareenrollmentstatus=167410005 then 'Facilitated
+Enrollment'
+ when tri_imaginecareenrollmentstatus=167410002 then 'Incomplete
+Enrollment'
+ when tri_imaginecareenrollmentstatus=167410003 then 'Opted Out'
+ when tri_imaginecareenrollmentstatus=167410000 then 'Unprocessed'
+ when tri_imaginecareenrollmentstatus=167410006 then 'Second email sent'
+ END
+select * from mgoetz.DemographicsHW1 --to see if it worked
+
+-- Here are the 10 random rows with the changes from #2:
+
+SELECT TOP 10 EnrollmentStatus FROM mgoetz.DemographicsHW1
+ORDER BY NEWID()
+
+--3. Code:
+
+EXEC sp_rename 'mgoetz.DemographicsHW1.Gender', 'SexAssignedAtBirthCode', 'COLUMN'
+ALTER TABLE mgoetz.DemographicsHW1
+ADD Gender as CASE
+ when COALESCE (SexAssignedAtBirthCode,’NULL’) = ‘NULL’ THEN 'Unknown'
+ when SexAssignedAtBirthCode='2' then 'female'
+ when SexAssignedAtBirthCode='1' then 'male'
+ when SexAssignedAtBirthCode='167410000' then 'other'
+ END
+
+--Here are the 10 random rows with the changes from 3:
+
+select top 10 Gender from mgoetz.DemographicsHW1
+order by NEWID()
+
+--4. Code:
+
+ALTER TABLE mgoetz.DemographicsHW1
+ADD AgeGroup as CASE
+ when Age>= 0 and Age< 25 then '(0,25)'
+ when Age>= 25 and Age<50 then '[25,50)'
+ when Age>=50 and Age< 75 then '[50,75)'
+ when Age>=75 and Age<100 then '[75,100)'
+ when Age>=100 and Age<125 then '[100,125)'
+ when Age>=125 and Age<150 then '[125,150)'
+ END
+select * from mgoetz.DemographicsHW1 --checked to see if it worked
+
+--Here are the 10 random rows with the changes from 4:
+
+select top 10 AgeGroup from mgoetz.DemographicsHW1
+order by NEWID()
+
+--I wasn’t sure if the professor wanted 10 random rows after completing all 4 problems, or after each problem,
+--so I did both. Here are 10 random rows after going through the changes of all 4 problems:
+
