@@ -1,0 +1,143 @@
+--#1
+
+select top 10 * from Conditions 
+
+select top 10 * from Demographics 
+
+select tri_name from Conditions 
+
+select parentcustomeridname from Demographics -- I did this to check the possible values for idname
+group by parentcustomeridname
+
+select distinct * from Conditions c
+inner join
+Demographics d
+on
+c.tri_patientid = d.contactid
+WHERE tri_name = 'Hypertension' and parentcustomeridname = 'Dartmouth-Hitchcock'
+
+--Therefore there are x patients who had hypertension and belonged to
+--Dartmouth-Hitchcock, under the assumption that the “Dartmouth-Hitchcock” category alone was the one wanted. 
+
+--If not, we could do the same code format and replace ‘Dartmouth-Hitchcock’ with ‘Dartmouth-Hitchcock
+-- Primary Care’, and so forth with each group that includes ‘Dartmouth-Hitchock’. We could do this for the D-H device only one as well. Actually I’m just going to do this,
+-- in case this is what was wanted so I don’t lose points, ha.
+
+select distinct * from Conditions c
+inner join
+Demographics d
+on
+c.tri_patientid = d.contactid
+WHERE tri_name = 'Hypertension' and (parentcustomeridname = 'Dartmouth-Hitchcock'
+or parentcustomeridname = 'Dartmouth-Hitchcock Primary Care' or
+parentcustomeridname = 'Dartmouth-Hitchcock Pulmonary Clinic')
+
+--There were y patients with hypertension that “belonged to Dartmouth-Hitchcok,” if this definition includes the 'Dartmouth-Hitchcock Primary Care’ and
+--'Dartmouth-Hitchcock Pulmonary Clinic' in addition to the plain ‘Dartmouth-Hitchcock’ category. 
+
+-- #2
+
+select * from Demographics 
+select distinct * from Demographics -- also the same amount of patients. I did this to double-check that a patient can't classify' 
+--as having more than 1 of these (more than one entry if they had 2 or more of these categories, for instance)
+
+select distinct avg(tri_age) from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Hypertension' --The average age of a patient having hypertension is roughly z years.
+
+select distinct avg(tri_age) from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Congestive Heart Failure' -- The average age of a patient having CHF is roughly a years.
+
+select distinct avg(tri_age) from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'COPD' --The average age of a patient having COPD is roughly b years.
+
+--If for whatever reason the professor meant average age of people who belong to any one of these categories, or for fun, here is the code for that:
+
+select distinct avg(tri_age) from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'COPD' or tri_name = 'Hypertension' or tri_name = 'COPD' --The average age of a patient having hypertension, COPD, or CHF is
+--roughly e years.
+
+select distinct tri_name from Conditions --to check the specific labels of these conditions
+
+-- # 3
+
+--Assuming Dartmouth-Hitchcock, or whoever collected this data, probably just took the record info of their legal sex assigned at birth, 
+--and didn't ask them their gender identity, there were b patients who had COPD that were also assigned male at birth. 
+--This is also assuming the gendercode of 1 refers to “Male” (I would definitely have chosen 1 as “Female” since too many already think of
+--females as “the second sex”).
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'COPD' and gendercode = '1' 
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Hypertension' and gendercode = '1' --There were f patients who had hypertension that were also assigned male at birth.
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Congestive Heart Failure' and gendercode = '1' --There were g patients who had CHF that were also assigned male at birth (very 
+-- close to the COPD count).
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'COPD' and gendercode = '2' 
+
+--There were h patients who had COPD that were assigned female at birth.
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Hypertension' and gendercode = '2'
+
+--There were j patients who had hypertension that were assigned female at birth.
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where tri_name = 'Congestive Heart Failure' and gendercode = '2' 
+
+--There were k patients who had CHF that were assigned female at birth.
+
+--To double-check my code, the sum of the latter 3 of these values should equal this code result:
+
+select distinct * from Demographics d
+inner join
+Conditions c
+on
+c.tri_patientid = d.contactid
+where (tri_name = 'COPD' or tri_name = 'Congestive Heart Failure' or tri_name =
+'Hypertension') and gendercode='2'
+
+-- and it does, yay : o ))
