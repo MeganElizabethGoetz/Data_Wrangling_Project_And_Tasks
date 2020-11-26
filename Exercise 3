@@ -1,0 +1,94 @@
+-- Question 1: This code gave me the different categories: Activity Monitoring, COPD, Diabetes, Hypertension, & Congestive Heart Failure:
+
+select tri_name from Conditions
+group by tri_name
+
+-- 1. COPD count:
+
+select distinct * from Conditions
+where tri_name = 'COPD'
+
+--2. Diabetes count:
+
+select distinct * from Conditions
+where tri_name = 'Diabetes’
+
+-- 3. Hypertension count:  Used the same code method as 1. & 2.
+
+-- Question 2:
+
+-- Part 1:
+--Average height of outpatient:
+
+select distinct * into mgoetz.number2Height from Flowsheets f
+left join
+Outpatient o
+on
+f.PAT_ENC_CSN_ID = o.NEW_PAT_ENC_CSN_ID
+where o.PATIENT_DOB_CATEGORY = 'Over 64' and f.DISP_NAME = 'Height'
+
+select avg(MEAS_VALUE) from mgoetz.number2Height
+
+-- This gave me an average height of about w inches.
+
+--I just tried a simpler solution, after finding the simple solution for #3 and it gives me almost an identical answer:
+
+select distinct avg(meas_value) from Flowsheets f
+inner JOIN
+Outpatient o
+ON
+f.PAT_ENC_CSN_ID = o.NEW_PAT_ENC_CSN_ID
+WHERE DISP_NAME = 'Height' and MEAS_VALUE > 0 and PATIENT_DOB_CATEGORY = 'Over 64'
+
+-- returns a value of x
+
+--Part 2:
+--Average height of inpatient:
+
+select distinct * into mgoetz.number2InHeight from Flowsheets f2
+left join
+Inpatient i
+ON
+f2.PAT_ENC_CSN_ID = i.NEW_PAT_ENC_CSN_ID
+where i.DOB_CATEGORY = 'Over 64' and f2.DISP_NAME = 'Height'
+select avg(MEAS_VALUE) from mgoetz.number2InHeight
+
+-- This gave me an average height of about z inches.
+
+--I took the same second approach as in part 1:
+
+select distinct avg(meas_value) from Flowsheets f
+inner JOIN
+Inpatient i
+ON
+f.PAT_ENC_CSN_ID = i.NEW_PAT_ENC_CSN_ID
+WHERE DISP_NAME = 'Height' and MEAS_VALUE > 0 and DOB_CATEGORY = 'Over 64'
+
+-- and actually did get an identical answer this time of b.
+
+-- Question 3:
+
+SELECT distinct AVG(MEAS_VALUE) from Dx d
+inner join
+Flowsheets f
+on
+d.NEW_PAT_ENC_CSN_ID = f.PAT_ENC_CSN_ID
+where DISP_NAME = 'Height' and DX_NAME like '%hypertens%'
+
+-- average height for patients suffering from hypertension is about c inches.
+
+SELECT distinct AVG(MEAS_VALUE) from Dx d
+inner join
+Flowsheets f
+on
+d.NEW_PAT_ENC_CSN_ID = f.PAT_ENC_CSN_ID
+where DISP_NAME = 'Weight' and DX_NAME like '%hypertens%'
+
+-- average weight is about d oz's.
+
+SELECT distinct AVG(MEAS_VALUE) from Dx d
+inner join
+Flowsheets f
+on
+d.NEW_PAT_ENC_CSN_ID = f.PAT_ENC_CSN_ID
+where DISP_NAME like '%BMI%' and DX_NAME like '%hypertens%'
