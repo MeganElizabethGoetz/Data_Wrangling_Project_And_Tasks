@@ -1,0 +1,35 @@
+#Made all entries in DX_NAME lowercase:
+#code: 
+
+DX$DX_NAME <- tolower(DX$DX_NAME)
+
+#2. Remove commas: ^ this is the output for DX_NAME without the commas as well:
+
+#The code for this is: 
+
+DX$DX_NAME <- gsub(",","",DX$DX_NAME,fixed=TRUE)
+
+#Remove spaces: The code for this is:
+
+DX$DX_NAME <- gsub(" ","",DX$DX_NAME,fixed=TRUE)
+
+#3. Removed hyphens of Inpatient NEW_PATIENT_DHMC_MRN:
+
+#code:
+
+Inpatient$NEW_PATIENT_DHMC_MRN <-gsub("-","",Inpatient$NEW_PATIENT_DHMC_MRN,fixed=TRUE)
+
+#Same exact code for removing hyphens for Outpatient
+
+# Here are the two data tables merged:
+#code for tables merging:
+
+in_and_out_patients <-merge(Inpatient,Outpatient,by="NEW_PATIENT_DHMC_MRN")
+View(in_and_out_patients)
+
+#4. For merging by NEW_PATIENT_DHMC_MRN, we get w patients.
+
+#And this is what we get when we attempt to merge on NEW_PAT_ID with this code:
+
+in_and_out_patients2 <- merge(Inpatient,Outpatient,by="NEW_PAT_ID")
+View(in_and_out_patients2)
