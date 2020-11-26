@@ -1,0 +1,190 @@
+#install.packages("Hmisc")
+#install.packages("SASxport")
+
+library("SASxport")
+lookup.xport("DIQ_I.xpt")
+
+diabetes_survey <- read.xport("DIQ_I.xpt")
+head(diabetes_survey)
+
+str(diabetes_survey)
+
+diabetes_survey[complete.cases(diabetes_survey), ]
+
+#complete.cases() means “keep only the complete rows.” Because ‘0 rows’ is the output. This shows that there are missing
+#values in every row, which is unsurprising since it seems as though the design for the collection of data is a survey
+
+sum(complete.cases(diabetes_survey))
+## [1] 0
+
+#ˆThis further elaborates we have 0 complete rows. :/ (There is at least one column with an NA value per interview subject/row)
+#a. We need to address the missing values in each row. We will likely want to change binary/categorical variables into a char, rather than int.
+#b. I will be either replacing the NA’s with a char place-holder value for categorical/binary variables. Or, for variables that are numeric and
+#take on more than 2 options, I will replace the NAs with the median value or mean value, depending on if it’s likely for the distribution to be normal or not.
+
+#c. I will not be removing rows, because every single row has NA’s, so I would have an empty data set.
+#Also, it is typical for surveys/interviews to have NA values, so it’s an issue that is expected and basically unavoidable.
+
+#Conceptual analysis of each column:
+#SEQN: I think it is fine that the id number is an int, because we wouldn’t need to perform any type of
+#operations, calculations, or functions on these values - so we would not be giving numeric value/significance
+#to the id numbers. Either as an int, or char, we can still just view each id as its own “category.” So it’s fine
+#to leave it as int.
+
+sum(complete.cases(diabetes_survey$SEQN))
+
+#There are z complete cases for this column (no NA’s), which is expected since the production of the ID
+is not dependent on the response of the interviewee or whether they respond or not. So SEQN is officially fine to leave alone.
+
+library(dplyr)
+
+#install.packages(dbplyr)
+library(dbplyr)
+
+conn <- src_memdb()
+conn_isolated <- conn$con
+copy_to(conn,diabetes_survey,overwrite = TRUE)
+require(data.table)
+
+setDT(diabetes_survey)
+select distinct "DIQ010" from diabetes_survey;
+
+diabetes_survey$DIQ010 <- as.factor(diabetes_survey$DIQ010)
+levels(diabetes_survey$DIQ010)
+
+#I was not able to get the variable in a format such that any missing values appeared - any values of “.”. Both
+#an int and factor variable type, the different values are 1, 2, 3, and 9. So we will assume this column is fine.
+
+#Also when you do:
+
+sum(complete.cases(diabetes_survey$DIQ010))
+
+## [1] 9575
+
+#you get 9,575 again - so no missing values - yay!
+
+#Even just by viewing the data set, we can immediately tell there are missing values for column 3:
+
+sum(complete.cases(diabetes_survey$DID040))
+
+## [1] 853
+
+#Only 853 complete cases! Because only roughly 8.9% of the participants have a value for this column, I don’t
+#think we should replace the missing values with the mean. Regardless of the shape of the distribution, this
+#is only a very small percentage of the participants and might not be very representative of the distribution.
+#So it’s best to include a median since the few values we do have, some could be outliers. Ideally, I would
+#want to keep the NAs, but that would return any function of this variable as an NA itself.
+
+median(diabetes_survey$DID040, na.rm=TRUE) 
+
+
+View(diabetes_survey$DID040)
+
+diabetes_survey$DID040[is.na(diabetes_survey$DID040)] = median_value
+sum(complete.cases(diabetes_survey$DID040))
+
+## [1] 9575
+
+#yay! no NAs now :) Int type is fine since we are talking about age.
+unique(diabetes_survey$DID040)
+
+## [1] 46 50 52 53 58 32 11 59 60 38 57 40 68 31 62 51 61 22 26
+## [20] 47 55 44 30 999 4 43 17 65 42 8 56 66 35 29 73 49 67 45
+## [39] 21 54 5 80 27 72 25 34 7 28 48 76 41 70 2 74 69 24 64
+## [58] 3 63 33 37 18 39 9 23 75 10 71 666 36 13 20 12 19 77 78
+## [77] 16
+
+#There are no values listed as greater than 80, just as the website said. And there is a 666 and 999 just as
+#the codebook referenced.
+
+View(diabetes_survey$DID060)
+
+#We can see there are missing values just by viewing this column (and not even scrolling). This variable seems to be in months, so int is appropriate.
+#Let’s figure out how the number of missing values compared to observed values:
+
+sum(complete.cases(diabetes_survey$DID060))
+
+## [1] 256
+
+#wow, even a lot less recorded values. Again, we should use themedian instead of mean for the same reasoning
+#as before. Another good reason to do the median, rather than mean is because they are using codes like
+#“666” to refer to less than 1 month, which could be misinterpreted by some to be 666 months.
+
+median(diabetes_survey$DID060, na.rm=TRUE) # median is 7 months.
+
+## [1] 7
+
+diabetes_survey$DID060[is.na(diabetes_survey$DID060)] = 7
+sum(complete.cases(diabetes_survey$DID060)) #yay! no NAs now :) Int type is fine since we are talking a...(the rest of this comment got lost :/)
+
+## [1] 9575
+#yay! no NAs now :) Int type is fine since we are talking about months. “666” seems concerning though if
+#someone were to try and perform an operation, so perhaps those should be replaced with 0s since it’s less
+#than 1 month. It is in fact 0 months, but not 0 days. If we were to decide to do this we would use the gsub
+#function to replace 666 with 0s.
+
+View(diabetes_survey)
+
+#Variables DIQ175A–DIQ175W are all categorical variables, that we should replace missing values with 0’s
+#for. This is because the category values expressed as numbers do not actually hold any numeric value, just
+#a category code. Thus, we should also treat all of these as factors. So I will convert all of them to factors.
+
+diabetes_survey$DIQ175A[is.na(diabetes_survey$DIQ175A)] = 0
+diabetes_survey$DIQ175B[is.na(diabetes_survey$DIQ175B)] = 0
+diabetes_survey$DIQ175C[is.na(diabetes_survey$DIQ175C)] = 0
+diabetes_survey$DIQ175D[is.na(diabetes_survey$DIQ175D)] = 0
+diabetes_survey$DIQ175E[is.na(diabetes_survey$DIQ175E)] = 0
+diabetes_survey$DIQ175F[is.na(diabetes_survey$DIQ175F)] = 0
+diabetes_survey$DIQ175G[is.na(diabetes_survey$DIQ175G)] = 0
+diabetes_survey$DIQ175H[is.na(diabetes_survey$DIQ175H)] = 0
+diabetes_survey$DIQ175I[is.na(diabetes_survey$DIQ175I)] = 0
+diabetes_survey$DIQ175J[is.na(diabetes_survey$DIQ175J)] = 0
+diabetes_survey$DIQ175K[is.na(diabetes_survey$DIQ175K)] = 0
+diabetes_survey$DIQ175L[is.na(diabetes_survey$DIQ175L)] = 0
+diabetes_survey$DIQ175M[is.na(diabetes_survey$DIQ175M)] = 0
+diabetes_survey$DIQ175N[is.na(diabetes_survey$DIQ175N)] = 0
+diabetes_survey$DIQ175O[is.na(diabetes_survey$DIQ175O)] = 0
+diabetes_survey$DIQ175P[is.na(diabetes_survey$DIQ175P)] = 0
+diabetes_survey$DIQ175Q[is.na(diabetes_survey$DIQ175Q)] = 0
+diabetes_survey$DIQ175R[is.na(diabetes_survey$DIQ175R)] = 0
+diabetes_survey$DIQ175S[is.na(diabetes_survey$DIQ175S)] = 0
+diabetes_survey$DIQ175T[is.na(diabetes_survey$DIQ175T)] = 0
+diabetes_survey$DIQ175U[is.na(diabetes_survey$DIQ175U)] = 0
+diabetes_survey$DIQ175V[is.na(diabetes_survey$DIQ175V)] = 0
+diabetes_survey$DIQ175W[is.na(diabetes_survey$DIQ175W)] = 0
+diabetes_survey$DIQ175A <- as.factor(diabetes_survey$DIQ175A)
+diabetes_survey$DIQ175B <- as.factor(diabetes_survey$DIQ175B)
+diabetes_survey$DIQ175C <- as.factor(diabetes_survey$DIQ175C)
+diabetes_survey$DIQ175D <- as.factor(diabetes_survey$DIQ175D)
+diabetes_survey$DIQ175E <- as.factor(diabetes_survey$DIQ175E)
+diabetes_survey$DIQ175F <- as.factor(diabetes_survey$DIQ175F)
+diabetes_survey$DIQ175G <- as.factor(diabetes_survey$DIQ175G)
+diabetes_survey$DIQ175H <- as.factor(diabetes_survey$DIQ175H)
+diabetes_survey$DIQ175I <- as.factor(diabetes_survey$DIQ175I)
+diabetes_survey$DIQ175J <- as.factor(diabetes_survey$DIQ175J)
+diabetes_survey$DIQ175K <- as.factor(diabetes_survey$DIQ175K)
+diabetes_survey$DIQ175L <- as.factor(diabetes_survey$DIQ175L)
+diabetes_survey$DIQ175M <- as.factor(diabetes_survey$DIQ175M)
+diabetes_survey$DIQ175N <- as.factor(diabetes_survey$DIQ175N)
+diabetes_survey$DIQ175O <- as.factor(diabetes_survey$DIQ175O)
+diabetes_survey$DIQ175P <- as.factor(diabetes_survey$DIQ175P)
+diabetes_survey$DIQ175Q <- as.factor(diabetes_survey$DIQ175Q)
+diabetes_survey$DIQ175R <- as.factor(diabetes_survey$DIQ175R)
+diabetes_survey$DIQ175S <- as.factor(diabetes_survey$DIQ175S)
+diabetes_survey$DIQ175T <- as.factor(diabetes_survey$DIQ175T)
+diabetes_survey$DIQ175U <- as.factor(diabetes_survey$DIQ175U)
+diabetes_survey$DIQ175V <- as.factor(diabetes_survey$DIQ175V)
+diabetes_survey$DIQ175W <- as.factor(diabetes_survey$DIQ175W)
+
+#There is much, much more cleaning we could do with this data set, but here are some of the many changes
+#to start. There are likely some more of the 54 variables that are int’s that should be factors etc. The id
+#was an exception because both an int type and factor type would create the same number of “categories”
+#(ids). But if there is a true category, like in the previous questions where more than one person can report
+#that category value, it’s good to have it listed as a factor so people know there is no numeric significance.
+#However, converting the id to a factor could be beneficial for similar reasoning. Even though, it might seem
+#obvious that an ID number is unique and categorical, “factor” is usually a good indicator/clarifyer for people
+#to know it is something without numeric contextual significance.
+
+#Here is the data set with the applications of my cleaning exemplified:
+head(diabetes_survey)
+str(diabetes_survey)
