@@ -1,0 +1,160 @@
+```{r}
+my_connection <- odbcConnect(my_server_username,username,password)
+demographics <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Demographics")
+View(demographics)
+
+library(dplyr)
+library(dbplyr)
+library(sqldf)
+```
+#1
+
+```{r}
+unique(demographics$tri_age)
+
+# We see that NA is at least one of the observed values in our tri_age column.
+
+demographics_age <- demographics$tri_age #just makes it easier to refer to the column.
+
+which(is.na(demographics_age))
+
+# Tells us which rows have missing age values (or NULL).
+
+View(is.na(demographics_age)) #gives us a visual of this.
+```
+
+```{r}
+mean(demographics_age, na.rm=TRUE)
+
+demographics_age[is.na(demographics_age)] = #my_mean_value
+
+which(is.na(demographics_age)) # To show the mean imputation was indeed implemented.
+Output: integer(0)
+```
+
+#2
+```{r}
+library(lubridate)
+phone_call <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Phonecall")
+View(phone_call)
+
+CallEndTime <- c(length(nrow(phone_call))) #creating the new column
+phone_call <- cbind(phone_call,CallEndTime) #adding the new column
+View(phone_call)
+
+str(phone_call$CallStartTime) #seeing what data type it is
+
+CallStartTime <- phone_call$CallStartTime #creating vectors for convenience
+
+CallDuration <- phone_call$CallDuration
+
+CallStartTime_var <- strptime(phone_call$CallStartTime, format = '%m/%d/%y %I:%M %p') #informing R of what the format of my start time is
+phone_call$CallEndTime <- CallStartTime_var+minutes(CallDuration) #adding the call duration, to get the end time
+View(CallEndTime)
+
+phone_call$CallEndTime <- format(phone_call$CallEndTime,'%m/%d/%y %I:%M %p')
+View(phone_call)
+```
+
+#3
+```{r}
+Encounters <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Encounters")
+Procedure <- sqlQuery(my_connection, "select * from [qbs181].[dbo].[Procedure]")
+Provider <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Provider")
+View(Procedure)
+```
+
+```{r}
+View(Encounters) 
+
+#Viewing this data, I am given: new appointment date, new hospital admission date, 
+#new hospital dispacth date (probably?). From subtracting these two, I can get the duration of their stay at the hospital.
+#There are also 3 different patient IDs. It's probably easier to just enumerate the variables provided this way:
+
+colnames(Encounters)
+```
+```{r}
+colnames(Procedure)
+```
+
+```{r}
+colnames(Provider)
+```
+
+```{r}
+discharge_date <- Encounters$NEW_HSP_DISCH_DATE #creating vectors for convenience
+
+View(discharge_date)
+discharge_date_var <- strptime(discharge_date, format = '%Y-%m-%d') #informing R of what the format of my dispatch date is
+
+View(discharge_date_var)
+a
+dmission_date <- Encounters$NEW_HSP_ADMIT_DATE
+admission_date_var <- strptime(admission_date, format = '%m/%d/%Y')
+View(admission_date_var)
+
+hospital_stay_duration <- difftime(discharge_date_var,admission_date_var, units = "days")
+View(hospital_stay_duration)
+
+max(hospital_stay_duration, na.rm = TRUE) 
+which(hospital_stay_duration==120) 
+
+#Let's look at their info:
+Encounters$NEW_HSP_ADMIT_DATE[18991]
+Encounters$NEW_HSP_DISCH_DATE[18991]
+Encounters$NEW_PATIENT_DHMC_MRN[18991]
+Encounters$NEW_PAT_ENC_CSN_ID[18991]
+Encounters$NEW_PAT_ID[18991]
+Encounters$NEW_VISIT_PROV_ID[18991]
+
+#We want to know what procedure this patient had, so let's see what ID names Procedure uses.
+
+#If we look above at our colnames(Procedure) output, we see that PAT_ENC_CSN_ID is a
+#variable, so we will match our NEW_PAT_ENC_CSN_ID info  in Procedure:
+
+```{r}
+which(Procedure$PAT_ENC_CSN_ID == x)
+
+# Patient with the index y in our Procedure data set, so we can simply do the following to obtain the procedure value:
+```
+I.
+```{r}
+Procedure$PROC_DESC[y]
+```
+
+#II.
+#First, just from using the search bar in the Procedure data table, we have the
+#respective provider ID for this patient and their procedure. So we will see what ID name this matches with in Provider.
+
+```{r}
+which(Provider$NEW_PROV_ID==z)
+Provider$NEW_PROV_NAME[88] #Jesse Plemons. idk that one! lol
+
+```
+#But now we need the provider names for the next 4 highest amounts of stay, assuming that's
+#what was meant by maximum, since there is only one patient with the maximum days-stay
+
+```{r}
+sort(hospital_stay_duration,decreasing = TRUE) # The next 4 longest stays
+
+#So we need to find the providers who took care of these patients. We could actually just use the search bar again in hospital_stay_duration to get the
+#indices that correspond to Encounters.
+```
+
+#Next we use their indices to get the provider id from the Encounters data, and can use that to match with the provider id and name in the Provider data :)
+
+```{r}
+Encounters$NEW_VISIT_PROV_ID[index] 
+Encounters$NEW_VISIT_PROV_ID[index]
+Encounters$NEW_VISIT_PROV_ID[index] 
+Encounters$NEW_VISIT_PROV_ID[index]
+which(Provider$NEW_PROV_ID==y) 
+Provider$NEW_PROV_NAME[index] # Remus Lupin
+which(Provider$NEW_PROV_ID==z)
+Provider$NEW_PROV_NAME[index] # Saul Goodman
+which(Provider$NEW_PROV_ID==q)
+Provider$NEW_PROV_NAME[index] # Tony Soprano
+which(Provider$NEW_PROV_ID==p)
+Provider$NEW_PROV_NAME[index] # Clark Kent
+```
+#Therefore, our final answers for II are: Jesse Plemons, Remus Lupin, Saul Goodman, Tony Soprano, and Clark Kent.
