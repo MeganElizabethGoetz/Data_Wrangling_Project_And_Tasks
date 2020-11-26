@@ -1,0 +1,202 @@
+1. (a).
+
+```{r}
+#Loading these libraries because I will need them later on when I connect to our class SQL server:
+
+library("RODBC")
+library("dplyr")
+library(tidyr)
+library("aweek")
+install.packages("incidence")
+library(incidence)
+```
+
+```{r}
+blood_pressure_data <- read.csv()
+
+View(blood_pressure_data)
+
+#As suspected via the title of the csv, this is a file relating to blood pressure.I have changed the previous data frame name from 
+#"final_date" to "blood_pressure_data" to make it more informative.
+
+str(blood_pressure_data) 
+
+# In the order of the columns of our data set, we have: ID's, systolic values, diastolyic values, blood pressure alerts, and observed time.
+```
+
+```{r}
+#Per #1 a's instruction of my final exam, I will change BPA alerts from a character value to a category value, which is 
+#commonly expressed as factors via Rstudio. This will be a more appropriate way to represent categories of alert status via R.
+
+blood_pressure_data$BPAlerts <- as.factor(blood_pressure_data$BPAlerts) 
+
+#Changed it to a factor variable, which is common to use for a variable that represents a status.
+str(blood_pressure_data) # We can see that it did indeed change to factor.
+
+#Let's make sure the variable makes sense and see what the 7 types of categories are:
+
+levels(blood_pressure_data$BPAlerts) 
+
+# HTN1,HTN2,HTN3,Hypo1,Hyypo2,Normal,or null. good!
+#Now let's just change the variable name to "BPStatus"
+```
+
+```{r}
+colnames(blood_pressure_data) <- c("ID","SystolicValue","DiastolicValue","BPAStatus","ObservedTime")
+
+colnames(blood_pressure_data) # Yay! BPAStatus is officially official.
+```
+
+```{r}
+controlled_uncontrolledBP <- c()
+controlled_uncontrolledBP <- as.factor(controlled_uncontrolledBP) # I accidentally made it boolean (T/F) earlier.
+```
+
+(b.)
+
+```{r}
+controlled_uncontrolledBP <- case_when( 
+  blood_pressure_data$BPAStatus=="Hypo1" ~ 1, #1 represents Controlled. 0 represents Uncontrolled
+  blood_pressure_data$BPAStatus=="Normal" ~ 1,
+  blood_pressure_data$BPAStatus=="HTN1" ~ 0,
+  blood_pressure_data$BPAStatus=="HTN2" ~ 0,
+  blood_pressure_data$BPAStatus=="HTN3" ~ 0,
+  blood_pressure_data$BPAStatus=="Hypo2" ~ 0
+  )
+
+View(controlled_uncontrolledBP)
+blood_pressure_data <- cbind(blood_pressure_data,controlled_uncontrolledBP)
+View(blood_pressure_data)
+```
+
+(c.)
+```{r}
+
+my_connection <- odbcConnect()
+Demographics <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Demographics")
+head(Demographics) # To get a reminder of what this data set contains. We also want to see what we can join these two tables by (what variables).
+```
+
+So we're going to look at the head of our blood pressure data set as well.
+```{r}
+head(blood_pressure_data) # It looks as though the only possible variable they could share is ID. So we will merge on that
+```
+
+```{r}
+# First, to do this in R, it would be convenient for us to go ahead and change the variable name in Demographics to ID (like the BP set).
+
+names(Demographics)[1] <- "ID"
+
+colnames(Demographics) # cool, it worked!
+```
+
+#(c.)
+
+```{r}
+demographics_BP <- merge(Demographics,blood_pressure_data,by ="ID")
+head(demographics_BP)
+
+#We will assume EnrollmentCompleteDate is when the enrollment/intervention or start of the study began. This is where we will start our baseline week.
+
+(d.)
+```{r}
+#week_number <- date2week(demographics_BP$tri_enrollmentcompletedate , numeric=TRUE)
+# We get an error, so we need to put all the dates in the right format!
+```
+```{r}
+which(demographics_BP$tri_enrollmentcompletedate == "7/14/2016") # wow many are in this format
+```
+```{r}
+demographics_BP$tri_enrollmentcompletedate <- strptime(demographics_BP$tri_enrollmentcompletedate, format = '%m/%d/%Y') 
+# It looks like they might all be in this format, from looking at the head of the data set too, so we will inform R of the format it is in with this code ^.
+
+#So let's try the previous code again:
+week_number <- date2week(demographics_BP$tri_enrollmentcompletedate , numeric=TRUE)
+demographics_BP <- cbind(demographics_BP,week_number)
+View(demographics_BP)
+head(demographics_BP)
+```
+
+
+```{r}
+week_12_date <- incidence(demographics_BP$tri_enrollmentcompletedate, interval = "12 weeks")
+
+```
+
+--2 on the Final. 
+ 
+-- Demographics has: contactid,gendercode,tri_age,parent_customeridname,province,tri_imageine stuff
+-- Conditions has: tri_patientid and tri_name
+-- Text has: tri_contactId and SenderName, etc.
+ 
+select tri_patientid,tri_name from Conditions -- tri_name is just the condition, probably "triage" name. so it's not going
+
+-- to have the same values as SenderName. Therefore we must only be able to join on tri_patientid. Let's see what the id name variable
+-- is called for Demographics
+ 
+select contactid,parentcustomeridname from Demographics -- okay contact id is definitely the one we want!
+ 
+ 
+select * into #final from Demographics d 
+JOIN
+Conditions c 
+on
+d.contactid = c.tri_patientid
+JOIN
+Text t 
+on 
+t.tri_contactId = c.tri_patientid
+ 
+ 
+-- success!
+ 
+select * from #final -- 83,174 rows.
+ 
+select distinct contactid, max(TextSentDate),gendercode,tri_age,parentcustomeridname,tri_imaginecareenrollmentstatus,address1_stateorprovince,
+tri_imaginecareenrollmentemailsentdate,tri_enrollmentcompletedate,gender,tri_name,SenderName from #final
+group by contactid,gendercode,tri_age,parentcustomeridname,tri_imaginecareenrollmentstatus,address1_stateorprovince,
+tri_imaginecareenrollmentemailsentdate,tri_enrollmentcompletedate,gender,tri_name, SenderName --6769 patients
+ 
+select distinct contactid from #final -- 3416 patients
+ 
+select distinct contactid,TextSentDate = max(TextSentDate) from #final
+group by contactid --3416, to doublecheck that 3416 is how many rows I should be getting.
+
+#3.
+
+```{r}
+Conditions <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Conditions")
+Text_Messages <- sqlQuery(my_connection, "select * from [qbs181].[dbo].Text")
+
+#From #2 in SQL, we know we need to merge on the id names, Let's recall which ones those were.
+
+colnames(Demographics) # ID
+colnames(Text_Messages) # tri_contactID [1]
+colnames(Conditions) # [1]
+
+names(Conditions)[1] <- "ID" 
+names(Text_Messages)[1] <- "ID" 
+
+temp <- merge(Demographics,Conditions,by = "ID") #temporary intermediate table
+
+demogrph_condtns_txt <- merge(temp,Text_Messages, by = "ID")
+
+version2 <- demogrph_condtns_txt %>% group_by(ID) %>% filter(TextSentDate == max(TextSentDate, na.rm = TRUE)) 
+# It seems as though texts must have been sent multiple times in one day, because this
+#only keeps the rows where the TextSentDate is the maximum(latest date) for that ID.
+
+View(version2) # Multiple texts were sent on one day for multiple patients, because they received texts from more than one sender, 
+#i.e. the clinician or the system (automated texts?).
+
+#You can see this in the head here: Both the 5th and 6th row are the same ID and the same date, but were sent texts from both the clinician and the system.
+
+head(version2)
+View(demogrph_condtns_txt)
+```
+# Two head() outputs showing that the same patient had more than one text sent to them on the same day, but by different senders, 
+#so they are listed in more than one row for this reason.
+
+#Code that I used to randomly print 10 lines in Rstudio.
+View(version2[sample(nrow(version2), 10), ]) 
+
+--I added “select distinct top 10” or “select top 10” to my code in SQL to randomly print 10 rows.
