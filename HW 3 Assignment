@@ -1,0 +1,275 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyr)
+library(dplyr)
+
+#1. 
+#The directions were unclear to me.
+
+table2
+
+#calculation of the rate
+#table2%>%mutate(rate=cases/population*10000) #Per 10,000 people.
+```
+
+```{r}
+spread(table2,key=type,value=count)
+```
+
+```{r}
+#a
+
+spread(table2,key=type,value=count)%>%select(year,country,cases)
+
+cases_1 <- spread(table2,key=type,value=count)%>%select(cases)
+
+```
+
+```{r}
+#b
+
+spread(table2,key=type,value=count)%>%select(year,country,population)
+
+pop <- spread(table2,key=type,value=count)%>%select(population)
+```
+
+```{r}
+#c + #d.
+
+#table2%>%mutate(rate=cases/population*10000) #Per 10,000 people.
+#table2
+
+#seems like you might be wanting more than this, so here is an alternative:
+```
+
+```{r}
+#c
+cases_1/pop*10000
+#unite, separate, spread, and gather
+```
+```{r}
+#d
+
+table2%>%spread(key=type,value=count)%>%mutate(rate = cases/population*10000) #Per 10,000 people.
+```
+
+```{r}
+table4a #this seems to be for case count
+```
+
+```{r}
+table4a%>%gather(`1999`,`2000`,key="year",value="cases")
+```
+
+
+```{r}
+table4b #this seems to be for population count
+```
+
+```{r}
+
+table4b%>%gather(`1999`,`2000`,key="year",value="population")
+
+```
+
+```{r}
+table4a%>%gather(`1999`,`2000`,key="year",value="cases")%>%inner_join(table4b%>%gather(`1999`,`2000`,key="year",value="population"),by= c("country","year"))
+
+```
+```{r}
+table4a%>%gather(`1999`,`2000`,key="year",value="cases")%>%inner_join(table4b%>%gather(`1999`,`2000`,key="year",value="population"),by= c("country","year"))%>%
+mutate(rate=cases/population*10000)
+```
+
+# I now have reproduced what I got from table2, with table 4a and table 4b! :)
+
+#I'm not sure how I am supposed to be using separate and unite, but will anyway I guess haha.
+
+```{r}
+#We can split the year by century with separate.
+
+table4a%>%gather(`1999`,`2000`,key="year",value="cases")%>%inner_join(table4b%>%gather(`1999`,`2000`,key="year",value="population"),by= c("country","year"))%>%
+mutate(rate=cases/population*10000)%>%
+  separate(year,into=c("century","decade"),sep=2)
+
+#obviously 99's isn't a decade, but I thought it was better than "year."
+```
+
+```{r}
+#We can unite them back together:
+
+table4a%>%gather(`1999`,`2000`,key="year",value="cases")%>%inner_join(table4b%>%gather(`1999`,`2000`,key="year",value="population"),by= c("country","year"))%>%
+mutate(rate=cases/population*10000)%>%
+  separate(year,into=c("century","decade"),sep=2)%>%
+  unite(year,century,decade,sep = "")
+
+
+```
+
+
+
+
+#2
+
+
+#table4a%>%gather(1999,2000,key="year",value="cases")
+
+#There needs to be single quotation marks around the 1999 and 2000 because they are column names/are characters.
+
+
+
+
+```{r}
+
+#3
+
+library(nycflights13)
+#library(ggplot)
+
+str(flights)
+
+#Assuming "flight time" is sched_dep_time:
+
+by_day <- group_by(flights,year,month,day)
+
+min(flights$year)#2013
+max(flights$year)#2013. So only one year's worth of data.
+
+min(flights$month) #1
+max(flights$month) #12
+
+#okay so the dates seem to be as expected.
+
+jan_flights <- flights%>%summarize(by_day,center=mean(sched_dep_time,na.rm=TRUE))%>%filter(month==1)
+
+summary(jan_flights$sched_dep_time)
+                    
+#Each plane (tailum) seems to be part of the following distribution at the beginning of the year 2013, with respect to the mean time of shed_dep_time: a 
+#median (of the mean) of 1:59 pm, a mean of 1:41 pm (so slightly skewed left). With an IQR of 8 hours and 25 minutes. Quite the spread.
+```
+
+```{r}
+mid_year_flights <- flights%>%summarize(by_day,center=mean(sched_dep_time,na.rm=TRUE))%>%
+  filter(month==6,day>=15)
+
+summary(mid_year_flights$sched_dep_time)
+
+#Each plane (tailum) seems to be part of the following distribution at the middle of the year 2013: a median of 2:05 pm (slightly later than the beginning, 
+#but only by 6 minutes!), a mean of 1:49 pm (again, 8 minutes later than the jan_flights & skewed left). With an IQR of 8 hours and 21 minutes 
+#( the IQR is actually 4 minutes shorter here!)
+```
+
+```{r}
+year_end_flights <- flights%>%summarize(by_day,center=mean(sched_dep_time,na.rm=TRUE))%>%
+  filter(month==12)
+
+summary(year_end_flights$sched_dep_time)
+
+#Each plane (tailum) seems to be part of the following distribution at the end of the year 2013: a median of 1:55 pm (early than both January and June, 
+#but again, only by a few minutes), a mean of 1:45 pm (earlier than the other two times). Also, this distribution seems the most symmetric of the three 
+#since it's mean and median are closer to each other than the other two time periods' stats. IQR of 8 hours and 21 minutes again! Kinda weird and the 
+#distribution of the IQR would be interesting to look at to see how likely it is they would be identical from one month to the next etc.
+
+#The min and maximums being the same for all 3 times of the year is unsurprising since this is probably the earliest and latest times flights can be scheduled,
+#and as we can see, WILL be scheduled.
+```
+
+I probably shouldn't have done a summary of the means, but it shouldn't make too much of a difference, the comparisons/results of the distributions are probably
+#still consistent.
+
+
+```{r}
+
+summary(flights$dep_time-flights$sched_dep_time)
+# On average, flights were about 8.5 minutes late, but surprisinly, the median is actually a flight that is 2 minutes early. THere is much more spread between 
+#the minutes before the scheduled dept time (early departure) to the median, than a late departure to the median. There is almost 1000 more minutes earlier 
+#as a min, than the # of minutes later of the max.
+
+#I would say the mean and median paint the times as pretty consistent.
+```
+
+```{r}
+sd(flights$dep_time-flights$sched_dep_time, na.rm = TRUE) #145 minutes is a pretty large standard deviation I feel like though.Which isn't too surprising since
+#the range is so large almost 4000 minutes to be exact (about 67 hours).
+
+```
+
+```{r}
+flights
+```
+
+
+I just realized dep_delay is what I just calculated so.
+```{r}
+summary(flights$dep_delay)
+#Hmmm. something is off. I guess this might be what you meant by are they consistent?
+#For some reason, the dep_delay is NOT consistent with the difference between the two times. The min and maximums are vastly different.
+
+#However, whatever the difference between summary(dep_delay) and summary of the difference of the observed-expected, both have a median of -2 and a positive 
+#mean value, one of 8 minutes late and one of 12, so not too far off considering there are 1440 minutes in a day.
+
+```
+
+```{r}
+library(dplyr)
+library(magrittr)
+flights%<>%mutate(delayed = case_when(dep_delay>0 ~ '1',dep_delay<0 ~'0'))
+
+flights
+
+flights$delayed <- as.factor(flights$delayed)
+```
+
+```{r}
+a <- flights%>%filter(minute>=20 & minute<30,delayed==0)
+a
+```
+
+```{r}
+b <- flights%>%filter(minute>=10 & minute<20,delayed==0)
+b
+```
+
+```{r}
+str(which(a$dep_delay==b$dep_delay))# 2637 of the 23,570 (about 11%) of the departure times for 10-20 minutes flights have dep_delays with the exact same 
+#number of minutes early as the best-matched "corresponding" 20-30 minute flights.
+
+#Such as an 8:10 flight having a 3-min early departure, and then the 9:20 flight also have a 3-min departure. This happened for roughly 11% of the early 
+#departures that occurred in the 10-20 minutes. This is a rough estimate and analysis.
+```
+
+```{r}
+ c <- flights%>%filter(minute>=20 & minute<30,delayed==0)
+c
+```
+```{r}
+d <- flights%>%filter(minute>=50 & minute<60,delayed==0)
+d
+```
+
+```{r}
+str(which(c$dep_delay==d$dep_delay)) #3269 50-60 min flights, of 24312 20-30 flights had "corresponding" dep_delay values. about 13%
+```
+
+```{r}
+
+e <- flights%>%filter(minute>=50 & minute<=60,delayed==0)
+
+diff_sched_actual <- e$dep_time - e$sched_dep_time
+lm(e$dep_delay ~ diff_sched_actual)
+
+#Okay, the prediction is perfect. so that's good. is this all the professor wanted??
+```
+
+```{r}
+f <- flights%>%filter(minute>=20 & minute<=30,delayed==0)
+diff_sched_actual2 <- f$dep_time - f$sched_dep_time
+lm(f$dep_delay ~ diff_sched_actual2)
+
+#This one actually actually isn't perfect (but still near perfect), so it is informative after all, to measure the predicting power I guess. 
+#Early departure is determined by scheduled flights leaving early.
+```
