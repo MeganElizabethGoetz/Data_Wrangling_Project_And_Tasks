@@ -1,0 +1,47 @@
+1.
+
+#Because climate change is such a universal, hot topic and prominent issue, 
+#there are so many results within the last 3 years that we can’t load them all within 1 query:
+
+#Code:
+
+
+```{r}
+install.packages("devtools")
+devtools::install_github("ropengov/rtimes")
+library("ropengov/rtimes")
+library(rtimes)
+```
+
+```{r}
+
+API_key <- "my_api_key"
+art_ser_clim_delta <- as_search(q="climate change",begin_date="20171126",end_date="20201126",key=API_key,page = 0)
+art_ser_clim_delta
+```
+
+
+#All I had to do to produce the last 5 of the 6 screenshots is increase the page number by 1 every time to look at the next 10 most recent results.
+
+#code:
+
+install.packages("twitteR")
+library(twitteR) 
+
+API_key <- "my_API_key"
+
+API_secret_key <-"my_api_secret_key"
+
+access_token <- "my_access_token"
+
+access_token_secret <- "my_access_token_secret" 
+
+setup_twitter_oauth(API_key, API_secret_key, access_token, access_token_secret)
+
+tw_result = twitteR::searchTwitter('#earthhour', n = 8, since = '2018-11-27')
+tw_result #prints result
+
+#Double-checked that the tweets include the #earthhour hashtag:
+
+#The very first result is from @geographycarrie.
+
