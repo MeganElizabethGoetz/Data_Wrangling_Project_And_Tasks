@@ -1,0 +1,268 @@
+1. This is in an RMarkdown file.
+```{r}
+library(rvest)
+library(stringr)
+library(dplyr)
+library(lubridate)
+library(readr)
+
+qbs_2019_cohort <-  read_html("https://geiselmed.dartmouth.edu/qbs/2019-cohort/")
+View(qbs_2019_cohort)
+
+h1_text <- qbs_2019_cohort %>% html_nodes("h1") %>%html_text()
+h2_text <- qbs_2019_cohort %>% html_nodes("h2") %>%html_text()
+h3_text <- qbs_2019_cohort %>% html_nodes("h3") %>%html_text()
+head(h2_text) #2019
+head(h1_text) #2019 Masters Cohort
+head(h3_text) # N/A
+
+
+p_nodes <- qbs_2019_cohort %>%html_nodes("p")
+head(p_nodes)
+
+#Output:
+
+{xml_nodeset (6)}
+[1] <p class="tagline"></p>
+[2] <p></p>\n
+[3] <p></p>\n
+[4] <p></p>\n
+[5] <p></p>\n
+[6] <p></p>\n
+
+```
+
+```{r}
+p_text <- qbs_2019_cohort %>% html_nodes("p") %>%html_text()
+length(p_text) #18
+View(p_text) #18 rows, 17 and 18 have content
+
+p_text[17]
+
+#Output:
+
+[1] "Copyright © 2020 Trustees of Dartmouth College\n          Higher Education Act Information\n          Dartmouth Compliance and Ethics Hotline"
+```
+
+```{r}
+p_text[18]
+
+#Output:
+
+[1] "This page may link to PDF files. Use this link to download Adobe Reader if needed."
+```
+```{r}
+ul_text <- qbs_2019_cohort %>% html_nodes("ul") %>%html_text()
+length(ul_text) #31
+
+View(ul_text) #informative of website content:
+#ul_text
+```
+```{r}
+li_text <- qbs_2019_cohort %>% html_nodes("li") %>%html_text()
+length(li_text) #120
+
+li_text
+
+#Output:
+
+[1] "Geisel School of Medicine"                                                                                                                                                                                                                                                                                                   
+  [2] "Dartmouth"                                                                                                                                                                                                                                                                                                                   
+  [3] "Departments & Centers"                                                                                                                                                                                                                                                                                                       
+  [4] "Find People\nDartmouth Directory\n\tGeisel Faculty Directory\n"                                                                                                                                                                                                                                                               
+  [5] "Dartmouth Directory"                                                                                                                                                                                                                                                                                                         
+  [6] "Geisel Faculty Directory"                                                                                                                                                                                                                                                                                                    
+  [7] "Giving\nMake a Gift\n\tAnatomical Gifts Program\n"                                                                                                                                                                                                                                                                            
+  [8] "Make a Gift"                                                                                                                                                                                                                                                                                                                 
+  [9] "Anatomical Gifts Program"                                                                                                                                                                                                                                                                                                    
+ [10] "DEI Dashboard"        
+[11] "Alumni"                                                                                                                                                                                                                                                                                                                      
+ [12] "Quick Links\nAdmissions\n\tBiomedical Libraries\n\tCOVID-19 Info\n\tDartmouth COVID-19 Task Force\n\t\tGeisel
+ COVID-19 Info\n\t\tMD Student COVID Info\n\t\tD-H COVID-19 Info\n\t\n\tDiversity & Inclusion\n\tEvents Calendar\n\tGeisel
+ Computing\n\tNews\n\tRegistrar\n\tFinancial Aid\n"                                                   
+ [13] "Admissions"                                                                                                                                                                                                                                                                                                                  
+ [14] "Biomedical Libraries"                                                                                                                                                                                                                                                                                                        
+ [15] "COVID-19 Info\n\tDartmouth COVID-19 Task Force\n\t\tGeisel COVID-19 Info\n\t\tMD Student COVID Info\n\t\tD-H COVID-19 Info\n\t"                                                                                                                                                                                                      
+ [16] "Dartmouth COVID-19 Task Force"                                                                                                                                                                                                                                                                                               
+ [17] "Geisel COVID-19 Info"                                                                                                                                                                                                                                                                                                        
+ [18] "MD Student COVID Info"                                                                                                                                                                                                                                                                                                       
+ [19] "D-H COVID-19 Info"                                                                                                                                                                                                                                                                                                           
+ [20] "Diversity & Inclusion"                                                                                                                                                                                                                                                                                                       
+ [21] "Events Calendar"                                                                                                                                                                                                                                                                                                             
+ [22] "Geisel Computing"                                                                                                                                                                                                                                                                                                            
+ [23] "News"                                                                                                                                                                                                                                                                                                                        
+ [24] "Registrar"                                                                                                                                                                                                                                                                                                                   
+ [25] "Financial Aid"                                                                                                                                                                                                                                                                                                               
+ [26] "Geisel School of Medicine"                                                                                                                                                                                                                                                                                                   
+ [27] "Dartmouth"                                                                                                                                                                                                                                                                                                                   
+ [28] "Departments & Centers"                                                                                                                                                                                                                                                                                                       
+ [29] "Find People\nDartmouth Directory\n\tGeisel Faculty Directory\n"                                                                                                                                                                                                                                                               
+ [30] "Dartmouth Directory"                                                                                                                                                                                                                                                                                                         
+ [31] "Geisel Faculty Directory"                                                                                                                                                                                                                                                                                                    
+ [32] "Giving\nMake a Gift\n\tAnatomical Gifts Program\n"                                                                                                                                                                                                                                                                            
+ [33] "Make a Gift"                                                                                                                                                                                                                                                                                                                 
+ [34] "Anatomical Gifts Program"                                                                                                                                                                                                                                                                                                    
+ [35] "DEI Dashboard"                                                                                                                                                                                                                                                                                                               
+ [36] "Alumni"                                                                                                                                                                                                                                                                                                                      
+ [37] "Quick Links\nAdmissions\n\tBiomedical Libraries\n\tCOVID-19 Info\n\tDartmouth COVID-19 Task Force\n\t\tGeisel COVID-19 Info\n\t\tMD 
+ Student COVID Info\n\t\tD-H COVID-19 Info\n\t\n\tDiversity & Inclusion\n\tEvents Calendar\n\tGeisel Computing\n\tNews\n\tRegistrar\n\tFinancial Aid\n"                                         
+[38] "Admissions"                                                                                                                                                                                                                                                                                                                  
+ [39] "Biomedical Libraries"                                                                                                                                                                                                                                                                                                        
+ [40] "COVID-19 Info\n\tDartmouth COVID-19 Task Force\n\t\tGeisel COVID-19 Info\n\t\tMD Student COVID Info\n\t\tD-H COVID-19 Info\n\t"                                                                                                                                                                                                      
+ [41] "Dartmouth COVID-19 Task Force"                                                                                                                                                                                                                                                                                               
+ [42] "Geisel COVID-19 Info"                                                                                                                                                                                                                                                                                                        
+ [43] "MD Student COVID Info"                                                                                                                                                                                                                                                                                                       
+ [44] "D-H COVID-19 Info"                                                                                                                                                                                                                                                                                                           
+ [45] "Diversity & Inclusion"                                                                                                                                                                                                                                                                                                       
+ [46] "Events Calendar"                                                                                                                                                                                                                                                                                                             
+ [47] "Geisel Computing"                                                                                                                                                                                                                                                                                                            
+ [48] "News"                                                                                                                                                                                                                                                                                                                        
+ [49] "Registrar"                                                                                                                                                                                                                                                                                                                   
+ [50] "Financial Aid"                                                                                                                                                                                                                                                                                                               
+ [51] "Program\nDoctoral Program (PhD)\n\tMasters Programs (MS)\n\tWhy QBS?\n"                                                                                                                                                                                                                                                        
+ [52] "Doctoral Program (PhD)"                                                                                                                                                                                                                                                                                                      
+ [53] "Masters Programs (MS)"                                                                                                                                                                                                                                                                                                       
+ [54] "Why QBS?"                                                                                                                                                                                                                                                                                                                    
+ [55] "People\nFaculty & Staff\n\tFeatured Faculty\n\tJames O’Malley, PhD\n\t\tDiane Gilbert-Diamond, ScD\n\t\tScott Gerber, PhD\n\t\n\tQBS 
+ Students\n\tMasters Students (MS)\n\t\t2020 Masters Students\n\t\t\n\t\tDoctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t\n\t\tStudent 
+ Profiles\n\t\tMS Alumni\n\t\tPhD Alumni\n\t\n"
+ [56] "Faculty & Staff"                                                                                                                                                                                                                                                                                                             
+ [57] "Featured Faculty\n\tJames O’Malley, PhD\n\t\tDiane Gilbert-Diamond, ScD\n\t\tScott Gerber, PhD\n\t"                                                                                                                                                                                                                          
+ [58] "James O’Malley, PhD"                                                                                                                                                                                                                                                                                                         
+ [59] "Diane Gilbert-Diamond, ScD"                                                                                                                                                                                                                                                                                                  
+ [60] "Scott Gerber, PhD"                                                                                                                                                                                                                                                                                                           
+ [61] "QBS Students\n\tMasters Students (MS)\n\t\t2020 Masters Students\n\t\t\n\t\tDoctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t\n\t\tStudent 
+ Profiles\n\t\tMS Alumni\n\t\tPhD Alumni\n\t"                                                                                                                                                     
+ [62] "Masters Students (MS)\n\t\t2020 Masters Students\n\t\t"                                                                                                                                                                                                                                                                          
+ [63] "2020 Masters Students"                                                                                                                                                                                                                                                                                                       
+ [64] "Doctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t"                                                                                                                                                                                                                                                                            
+ [65] "2020 PhD Students"                
+[66] "Student Profiles"                                                                                                                                                                                                                                                                                                            
+ [67] "MS Alumni"                                                                                                                                                                                                                                                                                                                   
+ [68] "PhD Alumni"                                                                                                                                                                                                                                                                                                                  
+ [69] "Admissions\nRequirements\n\tApplication Process\n\tGuide to Applying\n\tTuition & Aid\n"                                                                                                                                                                                                                                        
+ [70] "Requirements"                                                                                                                                                                                                                                                                                                                
+ [71] "Application Process"                                                                                                                                                                                                                                                                                                         
+ [72] "Guide to Applying"                                                                                                                                                                                                                                                                                                           
+ [73] "Tuition & Aid"                                                                                                                                                                                                                                                                                                               
+ [74] "Resources\nBurroughs Wellcome Fund\n\tCareer Development Resources\n\tEmployment Opportunities\n\tRecruiting Program\n\tLocal Community\n\tContact 
+ us\n"                                                                                                                                                                          
+ [75] "Burroughs Wellcome Fund"                                                                                                                                                                                                                                                                                                     
+ [76] "Career Development Resources"                                                                                                                                                                                                                                                                                                
+ [77] "Employment Opportunities"                                                                                                                                                                                                                                                                                                    
+ [78] "Recruiting Program"                                                                                                                                                                                                                                                                                                          
+ [79] "Local Community"                                                                                                                                                                                                                                                                                                             
+ [80] "Contact us"                                                                                                                                                                                                                                                                                                                  
+ [81] "Info\nAcademic Year 20-21 Updates & Announcements\n\tOn Campus Expectations & QBS Remote Learning Guidance\n\tQBS Logos\n"                                                                                                                                                                                                     
+ [82] "Academic Year 20-21 Updates & Announcements"                                                                                                                                                                                                                                                                                 
+ [83] "On Campus Expectations & QBS Remote Learning Guidance"                                                                                                                                                                                                                                                                       
+ [84] "QBS Logos"                                                                                                                                                                                                                                                                                                                   
+ [85] "Program\nDoctoral Program (PhD)\n\tMasters Programs (MS)\n\tWhy QBS?\n"                                                                                                                                                                                                                                                        
+ [86] "Doctoral Program (PhD)"                                                                                                                                                                                                                                                                                                      
+ [87] "Masters Programs (MS)"                                                                                                                                                                                                                                                                                                       
+ [88] "Why QBS?"                                                                                                                                                                                                                                                                                                                    
+ [89] "People\nFaculty & Staff\n\tFeatured Faculty\n\tJames O’Malley, PhD\n\t\tDiane Gilbert-Diamond, ScD\n\t\tScott Gerber, PhD\n\t\n\tQBS 
+ Students\n\tMasters Students (MS)\n\t\t2020 Masters Students\n\t\t\n\t\tDoctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t\n\t\tStudent 
+ Profiles\n\t\tMS Alumni\n\t\tPhD Alumni\n\t\n"
+ [90] "Faculty & Staff"                                                                                                                                                                                                                                                                                                             
+ [91] "Featured Faculty\n\tJames O’Malley, PhD\n\t\tDiane Gilbert-Diamond, ScD\n\t\tScott Gerber, PhD\n\t"                                                                                                                                                                                                                          
+ [92] "James O’Malley, PhD"                             
+[93] "Diane Gilbert-Diamond, ScD"                                                                                                                                                                                                                                                                                                  
+ [94] "Scott Gerber, PhD"                                                                                                                                                                                                                                                                                                           
+ [95] "QBS Students\n\tMasters Students (MS)\n\t\t2020 Masters Students\n\t\t\n\t\tDoctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t\n\t\tStudent 
+ Profiles\n\t\tMS Alumni\n\t\tPhD Alumni\n\t"                                                                                                                                                     
+ [96] "Masters Students (MS)\n\t\t2020 Masters Students\n\t\t"                                                                                                                                                                                                                                                                          
+ [97] "2020 Masters Students"                                                                                                                                                                                                                                                                                                       
+ [98] "Doctoral Students (PhD)\n\t\t2020 PhD Students\n\t\t"                                                                                                                                                                                                                                                                            
+ [99] "2020 PhD Students"                                                                                                                                                                                                                                                                                                           
+[100] "Student Profiles"                                                                                                                                                                                                                                                                                                            
+[101] "MS Alumni"                                                                                                                                                                                                                                                                                                                   
+[102] "PhD Alumni"                                                                                                                                                                                                                                                                                                                  
+[103] "Admissions\nRequirements\n\tApplication Process\n\tGuide to Applying\n\tTuition & Aid\n"                                                                                                                                                                                                                                        
+[104] "Requirements"                                                                                                                                                                                                                                                                                                                
+[105] "Application Process"                                                                                                                                                                                                                                                                                                         
+[106] "Guide to Applying"                                                                                                                                                                                                                                                                                                           
+[107] "Tuition & Aid"                                                                                                                                                                                                                                                                                                               
+[108] "Resources\nBurroughs Wellcome Fund\n\tCareer Development Resources\n\tEmployment Opportunities\n\tRecruiting Program\n\tLocal 
+Community\n\tContact us\n"                                                                                                                                                                          
+[109] "Burroughs Wellcome Fund"                                                                                                                                                                                                                                                                                                     
+[110] "Career Development Resources"                                                                                                                                                                                                                                                                                                
+[111] "Employment Opportunities"                                                                                                                                                                                                                                                                                                    
+[112] "Recruiting Program"                                                                                                                                                                                                                                                                                                          
+[113] "Local Community"                                                                                                                                                                                                                                                                                                             
+[114] "Contact us"                                                                                                                                                                                                                                                                                                                  
+[115] "Info\nAcademic Year 20-21 Updates & Announcements\n\tOn Campus Expectations & QBS Remote Learning Guidance\n\tQBS Logos\n"                                                                                                                                                                                                     
+[116] "Academic Year 20-21 Updates & Announcements"                                                                                                                                                                                                                                                                                 
+[117] "On Campus Expectations & QBS Remote Learning Guidance"                                                                                                                                                                                                                                                                       
+[118] "QBS Logos"                                                                                                                                                                                                                                                                                                                   
+[119] "Home"                                                                                                                                                                                                                                                                                                                        
+[120] "2019 Masters Cohort"                                                                                                                                                                                                                                                                                                         
+```
+
+```{r}
+lii_text <- qbs_2019_cohort %>% html_nodes("lii") %>%html_text()
+table_text<- qbs_2019_cohort %>% html_nodes("table") %>%html_text()
+
+lii_text# N/A
+
+table_text # N/A
+
+all_text <- qbs_2019_cohort %>%
+  html_nodes("div") %>% 
+  html_text()
+
+str(all_text) #43 
+
+all_text #wow. 
+View(all_text) # This includes biographical info of the students.
+
+all_text[20] # "Heejoon Ahn, BA Bothell, Washington, USA English, Spanish, Korean Bachelor of Arts in Computational Biology (ColbyCollege)" - 
+#such a cool degree!
+
+```
+```{r}
+all_text[34] # "Xiangyun Rui, BA Shanghai, Shanghai, China English, Chinese Mandarin Bachelor of Arts in Applied Mathematics & Statistics "
+# very cool
+#I’m currently learning Chinese! 
+```
+```{r}
+all_text[39] # Wow, Danica and Nebula are the only 2 math people in the '19 cohort! I need to talk math/stats with y'all!!
+
+```
+
+2. 
+
+```{r}
+library(rnoaa)
+
+ncdc_locs(locationcategoryid='ST',sortfield='id',sortorder='desc',token = token1) 
+# This gave us we wanted, the ID for Ohio: FIPS:39
+dataset<- ncdc_stations(locationid='FIPS:39',sortfield='name',sortorder='desc',limit=50,token = token1) 
+# This data set included information on WRIGHT PATTERSON AFB, OH US - what we wanted:
+
+Output:
+It is located at row 25. Thus:
+
+dataset2 <- as.data.frame(dataset[2])
+View(dataset2)
+
+dataset2[25,] # We want all the column data, but just the 25th row.
+#data.elevation = 245.1 data.mindate=1953-01-01 data.maxdate = 1962-06-30
+#data.latitude=39.78333, data.name (given) data.datacoverage=1 
+data.id =	GHCND:USW00013813
+#data.elevationUnit = METERS data.longitude = -84.1
+
+#using the data id and this function I did:
+answers <- ghcnd_search("USW00013813", var = c("TMAX","TMIN") , date_min = "1953-01-01", token=token1)
+str(answers) # TMAX and TMIN are both data sets of a tibble themselves. So I had to get just the tmin/tmax numbers from 
+#the tmax/tmin data sets (which included other info):
+min(answers$tmin$tmin, na.rm=TRUE) # -222 degrees Celsius. But this is old data and "tenths of degrees celsius" 
+#means we have to divide this number by 10 (because the format doesn't include the decimal points.) I could have turned this in days ago if I knew this lol. 
+#I thought I was doing something wrong because of the unrealistic measure values haha.
+
+#so -22.2 degrees Celsius, and -7.96 degrees Fahrenheit is the answer for min temperature in WRIGHT PATTERSON AFB, OH US.
+
+max(answers$tmax$tmax, na.rm=TRUE) #389 degrees Celsius. 38.9 degrees Celsius.102.2 degrees Fahrenheit.
+
+#so 38.9 degrees Celsius, and 102.2 degrees Fahrenheit is the answer for max temperature in WRIGHT PATTERSON AFB, OH US.
+```
